@@ -32,7 +32,7 @@ navigate('/')
   }
   const shop=()=>{
     alert("purchase complete")
-    navigate('/product/:id')
+    navigate(`/product/${id}`)
   }
 
 console.log(data)
