@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const AddProduct = () => {
+
+
   const navigate = useNavigate();
   const [Title, setTitle] = useState('');
   const [Desc, setDesc] = useState('');
@@ -21,6 +23,11 @@ useEffect(() => {
 
 
   const add = async () => {
+
+     if (!Title || !Desc || !Price || !Image|| Category) {
+  alert("Please fill all fields.");
+  return;
+     }
     await axios.post('http://localhost:3000/products', {
       title: Title,
       description: Desc,

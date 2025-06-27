@@ -28,7 +28,7 @@ const navigate=useNavigate()
   return (
     <>
       <div className="max-w-xl mx-auto p-6 bg-white shadow-md rounded space-y-4">
-      <h2 className="text-2xl font-bold mb-4">Add New Product</h2>
+      <h2 className="text-2xl font-bold mb-4">Register</h2>
 
       <div>
         <label className="block mb-1 font-medium">Name</label>

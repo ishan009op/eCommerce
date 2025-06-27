@@ -19,7 +19,7 @@ const Header = () => {
 
       <div className="flex gap-4 items-center">
         {user?.role === "seller" && (
-          <Link to="/add-product" className="hover:underline">Add Product</Link>
+          <Link to="/add" className="hover:underline">Add Product</Link>
         )}
 
         {!user ? (
@@ -29,7 +29,9 @@ const Header = () => {
           </>
         ) : (
           <>
+          <Link to={`/cart/${user._id}`} className="hover:underline">Cart</Link>
             <span className="text-sm">Hello, {user.name}</span>
+            
             <button onClick={handleLogout} className="bg-red-500 px-3 py-1 rounded">Logout</button>
           </>
         )}

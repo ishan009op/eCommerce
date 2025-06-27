@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
@@ -11,6 +11,12 @@ const Edit = () => {
   const [Category, setCategory] = useState('');
 const {id}=useParams()
   const edit = async () => {
+
+     if (!Title || !Desc || !Price || !Image|| !Category) {
+  alert("Please fill all fields.");
+  return;
+     }
+
     await axios.put(`http://localhost:3000/products/${id}`, {
       title: Title,
       description: Desc,

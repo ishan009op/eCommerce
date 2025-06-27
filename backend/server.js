@@ -1,7 +1,6 @@
 const express=require("express")
 const cors=require("cors")
-const Product=require('./Productdb')
-const Users=require('./Userdb')
+const { Product, Users,Cart,Order } = require('./db'); 
 const bcrypt=require("bcryptjs")
 const jwt=require("jsonwebtoken")
 const dotenv=require("dotenv")
@@ -11,8 +10,8 @@ dotenv.config()
 app.use(express.json());
 app.use(cors())
 
-const port = process.env.port
-const secret_key = process.env.Secret_key
+const port = process.env.PORT
+const secret_key = process.env.SECRET_KEY
 
 
 
@@ -29,15 +28,15 @@ app.get('/products',async(req,res)=>{
 
 app.post('/products',async(req,res)=>{
 const {title,description,price,image,category}=req.body
-Product.create({
+const product=await Product.create({
      title,
       description,
       price,
       image,
       category
 })
-const products=await Product.find({})
-    res.json(products)
+
+    res.json(product)
 })
 
 app.get('/products/:id',async(req,res)=>{
@@ -110,6 +109,88 @@ app.post('/login', async (req, res) => {
     );
 
   res.json({ message: "Login successful",token, user });
+});
+
+app.post('/cart', async (req, res) => {
+  try {
+    const { userId, products } = req.body;
+    const productToAdd = products[0]; // assuming only 1 product at a time
+
+    if (!userId || !productToAdd || !productToAdd.productId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    let cart = await Cart.findOne({ userId });
+
+    if (cart) {
+      const existingProductIndex = cart.products.findIndex(
+        (p) => p.productId.toString() === productToAdd.productId.toString()
+      );
+
+      if (existingProductIndex !== -1) {
+        // ❌ Already exists
+        return res.status(200).json({ message: "Product already in cart" });
+      }
+
+      // ✅ Add product if new
+      cart.products.push({ ...productToAdd, quantity: productToAdd.quantity || 1 });
+
+      // ✅ Recalculate total
+      cart.totalAmount = cart.products.reduce(
+        (sum, p) => sum + p.price * (p.quantity || 1),
+        0
+      );
+
+      const updated = await cart.save();
+      return res.json(updated);
+    } else {
+      // ✅ Create new cart
+      const newCart = new Cart({
+        userId,
+        products: [{ ...productToAdd, quantity: productToAdd.quantity || 1 }],
+        totalAmount: productToAdd.price * (productToAdd.quantity || 1),
+      });
+
+      const savedCart = await newCart.save();
+      return res.json(savedCart);
+    }
+  } catch (error) {
+    console.error("❌ Cart update failed:", error);
+    res.status(500).json({ error: "Something went wrong on the server" });
+  }
+});
+
+
+app.post('/order',async(req,res)=>{
+  const{userId,products,totalAmount}=req.body
+  const order = new Order({
+  userId,
+  products,
+  totalAmount,
+  shipping_details
+});
+
+res.json(await order.save())
+})
+
+
+
+app.get('/cart/:userId', async (req, res) => {
+  try {
+    console.log("Requested userId:", req.params.userId);
+
+    const cart = await Cart.findOne({ userId: req.params.userId });
+
+    if (!cart) {
+      console.log("No cart found for this user.");
+      return res.json({ products: [], totalAmount: 0 });
+    }
+
+    res.json(cart);
+  } catch (error) {
+    console.error("Error in GET /cart/:userId:", error);
+    res.status(500).json({ error: "Failed to fetch cart" });
+  }
 });
 
 
