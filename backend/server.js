@@ -4,7 +4,8 @@ const { Product, Users,Cart,Order } = require('./db');
 const bcrypt=require("bcryptjs")
 const jwt=require("jsonwebtoken")
 const dotenv=require("dotenv")
-
+const mongoose=require('mongoose')
+// const {cart}=require('../frontend/src/Components/Cart')
 const app=express()
 dotenv.config()
 app.use(express.json());
@@ -12,6 +13,7 @@ app.use(cors())
 
 const port = process.env.PORT
 const secret_key = process.env.SECRET_KEY
+
 
 
 
@@ -49,7 +51,7 @@ app.delete('/products/:id',async(req,res)=>{
     const product= await Product.findOneAndDelete({_id:id})
     res.json(product)
 })
-app.put('/products/:id', async (req, res) => {
+app.put('/products/:id',async (req, res) => {
   const id = req.params.id;
   const { title, description, price, image, category } = req.body;
 
@@ -68,7 +70,7 @@ app.put('/products/:id', async (req, res) => {
 });
 
 app.post('/register',async(req,res)=>{
-  const {name,email,password,role}=req.body;
+  const {name,email,password,role,address,phone}=req.body;
   const userExists= await Users.findOne({email}) 
   if(userExists){
     return res.status(200).json({error:"user already exists"})
@@ -79,7 +81,9 @@ const user=await Users.create({
 name,
 email,
 password:hash,
-role:role||"consumer"
+role:role||"consumer",
+address,
+phone
 })
 
 res.json(user)
@@ -105,7 +109,7 @@ app.post('/login', async (req, res) => {
         role: user.role
       },
       secret_key,
-      { expiresIn: '3d' }
+      { expiresIn: '30d' }
     );
 
   res.json({ message: "Login successful",token, user });
@@ -162,22 +166,45 @@ app.post('/cart', async (req, res) => {
 
 
 app.post('/order',async(req,res)=>{
-  const{userId,products,totalAmount}=req.body
+  const{id,userId,products,totalAmount}=req.body
   const order = new Order({
+   id,
   userId,
   products,
   totalAmount,
-  shipping_details
+  
 });
 
 res.json(await order.save())
 })
 
+app.get('/orders/:userId',async(req,res)=>{
+ try{ const userId=req.params.userId
+  const orders=await Order.find({userId:userId}).
+  populate('products.productId', 'title price image description')
+      .sort({ createdAt: -1 });
+  res.json(orders)
+ }catch(err){
+  console.log(err)
+ }
+})
 
 
-app.get('/cart/:userId', async (req, res) => {
+app.delete('/order/:id',async(req,res)=>{
+  const id=req.params.id
+const order=await Order.findOneAndDelete({_id:id})
+
+res.json(order)
+})
+
+
+
+
+
+
+app.get('/cart/:userId',async (req, res) => {
   try {
-    console.log("Requested userId:", req.params.userId);
+   
 
     const cart = await Cart.findOne({ userId: req.params.userId });
 
@@ -192,6 +219,68 @@ app.get('/cart/:userId', async (req, res) => {
     res.status(500).json({ error: "Failed to fetch cart" });
   }
 });
+
+// PUT /cart/product/:productId
+app.put('/cart/product/:productId', async (req, res) => {
+  const { userId, quantity } = req.body;
+  const { productId } = req.params;
+
+  try {
+    const cart = await Cart.findOne({ userId });
+
+    if (!cart) return res.status(404).json({ error: 'Cart not found' });
+
+    const product = cart.products.find(
+      (p) => p.productId.toString() === productId
+    );
+
+    if (!product) return res.status(404).json({ error: 'Product not in cart' });
+
+    product.quantity = quantity; // ✅ This line updates the quantity
+    await cart.save();           // ✅ This saves the updated cart in DB
+
+    res.status(200).json({ message: 'Quantity updated successfully', cart });
+  } catch (error) {
+    console.error('Error updating cart quantity:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+
+app.delete('/cart/product/:productId',async (req, res) => {
+  const productId = req.params.productId;
+
+  try {
+    const cart = await Cart.findOne({ userId:req.body.userId,'products.productId': productId });
+
+    if (!cart) {
+      return res.status(404).json({ error: 'Cart not found or product not in cart' });
+    }
+
+    // Check if the product exists
+    const productIndex = cart.products.findIndex(
+      p => p.productId.toString() === productId
+    );
+
+    if (productIndex === -1) {
+      return res.status(404).json({ error: 'Product not found in cart' });
+    }
+
+
+    // Remove the product
+    const removedProduct = cart.products.splice(productIndex, 1);
+
+    
+    await cart.save();
+
+    res.status(200).json({ message: 'Product removed', removedProduct });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+});
+
+
 
 
 

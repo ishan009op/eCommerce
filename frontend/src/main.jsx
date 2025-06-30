@@ -10,7 +10,9 @@ import Edit from './Components/Edit.jsx'
 import Register from './Components/Authentication/Register.jsx'
 import Login from './Components/Authentication/Login.jsx'
 import Cart from './Components/Cart.jsx'
-import Checkout from './Components/Checkout.jsx'
+
+import OrderHistory from './Components/orderHistory.jsx'
+
 const router=createBrowserRouter([{
   path:"/",
   element:<App/>,
@@ -47,9 +49,10 @@ const router=createBrowserRouter([{
       element:<Cart/>
     },
     {
-      path:'/checkout',
-      element:<Checkout/>
+      path:'/orders/:userId',
+      element:<OrderHistory/>
     }
+   
   ]
 }])
 

@@ -7,7 +7,7 @@ const Product = () => {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [num, setnum] = useState(1);
-  const { id, } = useParams();
+  const { id } = useParams();
 
   useEffect(() => {
     const fetch = async () => {
@@ -18,7 +18,6 @@ const Product = () => {
         console.error("Failed to fetch product", err);
       }
     };
-
     fetch();
   }, [id]);
 
@@ -29,18 +28,9 @@ const Product = () => {
     navigate('/');
   };
 
-  const shop = () => {
-    
-    navigate(`/checkout`);
-  };
-
-  const goBack = () => {
-    navigate(-1);
-  };
-
-const handleAddToCart = async () => {
-  try {
-    const response = await axios.post('http://localhost:3000/cart', {
+  const shop = async () => {
+    const res = await axios.post("http://localhost:3000/order", {
+      id,
       userId: user._id,
       products: [
         {
@@ -54,64 +44,107 @@ const handleAddToCart = async () => {
       totalAmount: data.price * num,
     });
 
-    if (response.data.message === "Product already in cart") {
-      alert("This product is already in your cart.");
-    } else {
-      navigate(`/cart/${user._id}`);
+    console.log(res);
+  };
+
+  const goBack = () => navigate(-1);
+
+  const handleAddToCart = async () => {
+    try {
+      const response = await axios.post('http://localhost:3000/cart', {
+        userId: user._id,
+        products: [
+          {
+            productId: id,
+            title: data.title,
+            price: data.price,
+            image: data.image,
+            quantity: num,
+          },
+        ],
+        totalAmount: data.price * num,
+      });
+
+      if (response.data.message === "Product already in cart") {
+        alert("This product is already in your cart.");
+      } else {
+        navigate(`/cart/${user._id}`);
+      }
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
     }
+  };
 
-  } catch (error) {
-    console.error("Failed to add to cart:", error);
-  }
-};
-
-
-
-  if (!data) return <div>Loading...</div>;
+  if (!data) return <div className="text-center mt-10 text-lg">Loading...</div>;
 
   return (
-    <div className="p-6 max-w-xl mx-auto border rounded shadow">
+    <div className="p-6 my-10 max-w-3xl mx-auto border rounded shadow-md bg-white">
       <button
         onClick={goBack}
-        className="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+        className="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
       >
         ← Back
       </button>
 
-      <img src={data.image} alt={data.title} className="w-full h-64 object-cover mb-4" />
-      <h2 className="text-2xl font-bold mb-2">{data.title}</h2>
-      <p className="text-gray-700 mb-2">{data.description}</p>
-      <p className="text-xl font-semibold text-green-600">₹{data.price}</p>
-<input type="number" min='1' onChange={(e)=>{setnum(Number(e.target.value))}} value={num} />
-      <button
-        onClick={shop}
-        className="mt-4 mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Shop Now
-      </button>
-      <button
-      onClick={handleAddToCart}
-        className="mt-4 mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Add to Cart
-      </button>
+      <div className="flex flex-col md:flex-row gap-6">
+        <img
+          src={data.image}
+          alt={data.title}
+          className="w-full md:w-1/2 h-64 object-cover rounded"
+        />
 
-      {user?.role === "seller" && (
-        <div className="flex gap-4 mt-2">
-          <Link
-            to={`/edit/${id}`}
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-          >
-            Edit
-          </Link>
-          <button
-            onClick={handledelete}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-          >
-            Delete
-          </button>
+        <div className="flex flex-col gap-2">
+          <h2 className="text-2xl font-bold">{data.title}</h2>
+          <p className="text-gray-700">{data.description}</p>
+          <p className="text-xl font-semibold text-green-600">₹{data.price}</p>
+
+          <label className="mt-2 text-sm font-medium">Quantity:</label>
+          <input
+            type="number"
+            min="1"
+            value={num}
+            onChange={(e) => setnum(Number(e.target.value))}
+            className="w-24 px-2 py-1 border rounded"
+          />
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <button
+              onClick={shop}
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Shop Now
+            </button>
+            <button
+              onClick={handleAddToCart}
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Add to Cart
+            </button>
+          </div>
+
+          <div className="mt-2 text-sm text-gray-600">
+            <p>Payment method: <strong>Cash on delivery</strong></p>
+            <p>Non-refundable</p>
+          </div>
+
+          {user?.role === "seller" && (
+            <div className="flex gap-4 mt-4">
+              <Link
+                to={`/edit/${id}`}
+                className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+              >
+                Edit
+              </Link>
+              <button
+                onClick={handledelete}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

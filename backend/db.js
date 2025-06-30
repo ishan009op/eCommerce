@@ -28,6 +28,8 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  address: { type: String, required: true },
+  phone: { type: Number, required: true },
   role: { type: String, enum: ['consumer', 'seller'], default: 'consumer' },
   createdAt: { type: Date, default: Date.now }
 });
@@ -47,31 +49,41 @@ const CartSchema = new mongoose.Schema({
   ],
   totalAmount: Number,
 });
-
 const OrderSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  id:{
+     type: mongoose.Schema.Types.ObjectId,
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
   products: [
     {
-      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-      quantity: { type: Number, default: 1 },
-    },
+      productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+        required: true
+      },
+      quantity: {
+        type: Number,
+        default: 1
+      }
+    }
   ],
-  totalAmount: Number,
-  shipping_details:{
-    name: { type: String, required: true },
-address: { type: String, required: true },
-phone: { type: String, required: true }
-
+  totalAmount: {
+    type: Number,
+    required: true
   },
   createdAt: {
     type: Date,
-    default: Date.now,
-  },
+    default: Date.now
+  }
 });
 
 // Export both models
 module.exports = {
-  Product: mongoose.model('products', productSchema),
+  Product: mongoose.model('Product', productSchema),
   Users: mongoose.model('users', userSchema),
   Cart:mongoose.model("cart",CartSchema),
   Order:mongoose.model("Order",OrderSchema)
